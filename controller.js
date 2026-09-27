@@ -1,7 +1,6 @@
 const Invoice = require("./model");
 const crypto = require("crypto");
-const PDFDocument = require("pdfkit");
-const generateInvoicePDF = require("./utils/generateInvoicePDF");
+const { generateInvoicePDF, buildInvoiceHTML } = require("./utils/generateInvoicePDF");
 
 const createNewInvoice = async (req, res) => {
     try {
@@ -132,11 +131,43 @@ const downloadInvoicePDF = async (req, res) => {
     }
 };
 
+const viewInvoiceHTML = async (req, res) => {
+    try {
+        const invoice = await Invoice.findById(req.params.id);
+        if (!invoice) {
+            return res.status(404).send(`
+                <!DOCTYPE html>
+                <html dir="rtl" lang="ar">
+                <head><meta charset="UTF-8"><title>الفاتورة غير موجودة</title></head>
+                <body style="font-family: Cairo, Tahoma, sans-serif; text-align: center; padding: 50px; background: #f9fafb;">
+                    <h2 style="color: #ef4444;">عذراً، الفاتورة غير موجودة أو تم حذفها</h2>
+                    <p style="margin-top: 10px; color: #4b5563;">تأكد من صحة رقم الفاتورة وحاول مجدداً</p>
+                    <a href="/" style="display: inline-block; margin-top: 16px; padding: 8px 16px; background: #135d66; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold;">العودة للنظام</a>
+                </body>
+                </html>
+            `);
+        }
+
+        const autoPrint = req.query.print === "true";
+        const html = buildInvoiceHTML(invoice, {
+            includeActionBar: true,
+            autoPrint: autoPrint,
+        });
+
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.send(html);
+    } catch (error) {
+        console.error("Server HTML generation error:", error);
+        res.status(500).send("<h2>حدث خطأ أثناء عرض الفاتورة</h2>");
+    }
+};
+
 module.exports = {
     createNewInvoice,
     getAllInvoice,
     getSingleInvoice,
     updateInvoice,
     deleteInvoice,
-    downloadInvoicePDF
+    downloadInvoicePDF,
+    viewInvoiceHTML
 }

@@ -5,7 +5,8 @@ const {
     getSingleInvoice,
     updateInvoice,
     deleteInvoice,
-    downloadInvoicePDF
+    downloadInvoicePDF,
+    viewInvoiceHTML
 } = require("./controller");
 const { createNewInvoice: createNewInvoiceValidation, updateInvoice: updateInvoiceValidation, idParam } = require("./valdation");
 
@@ -17,6 +18,8 @@ router.get(
     "/:id/pdf",
     downloadInvoicePDF
 );
+router.get("/:id/view", idParam, viewInvoiceHTML);
+router.get("/:id/html", idParam, viewInvoiceHTML);
 router.get("/:id", idParam, getSingleInvoice);
 router.put("/:id", updateInvoiceValidation, updateInvoice);
 router.delete("/:id", idParam, deleteInvoice);
