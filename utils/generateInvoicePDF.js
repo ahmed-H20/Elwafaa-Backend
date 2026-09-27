@@ -536,8 +536,10 @@ async function generateInvoicePDF(invoice) {
     `;
 
         await page.setContent(html, {
-            waitUntil: "networkidle0",
+            waitUntil: "domcontentloaded",
         });
+
+        await page.evaluateHandle("document.fonts.ready");
 
         const pdf = await page.pdf({
             format: "A4",

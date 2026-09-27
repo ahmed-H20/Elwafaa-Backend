@@ -15,12 +15,12 @@ app.use(express.json());
 //Connent to database
 const dbConnecting = () =>
     mongoose
-        .connect(process.env.DB_URL)
+        .connect(process.env.DB_URL, { dbName: "elwafaa" })
         .then(() => {
-            console.log("db connected Successfully✅");
+            console.log("db connected Successfully✅".cyan.bold);
         })
         .catch((err) => {
-            console.error(`error on connection with db💥: ${err}`);
+            console.error(`error on connection with db💥: ${err}`.red.bold);
             process.exit(1); // close server
         });
 

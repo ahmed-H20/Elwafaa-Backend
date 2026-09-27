@@ -5,17 +5,23 @@ const generateInvoicePDF = require("./utils/generateInvoicePDF");
 
 const createNewInvoice = async (req, res) => {
     try {
-        const { name, tax, products } = req.body;
-        let total
-        // calculate total 
-        if (tax) {
-            const priceBeforeTax = products.reduce((acc, product) => acc + (product.price * product.qty), 0);
-            total = priceBeforeTax + (priceBeforeTax * tax / 100);
-        } else {
-            total = products.reduce((acc, product) => acc + (product.price * product.qty), 0);
-        }
+        const { name, tax, products, invoiceNumber } = req.body;
+        const taxRate = Number(tax || 0);
+        const safeProducts = Array.isArray(products) ? products : [];
+        const priceBeforeTax = safeProducts.reduce((acc, product) => acc + (Number(product.price || 0) * Number(product.qty || 0)), 0);
+        const total = priceBeforeTax + (priceBeforeTax * taxRate / 100);
 
-        const invoice = await Invoice.create({ name, tax, total, products });
+        const invoice = await Invoice.create({
+            name,
+            invoiceNumber,
+            tax: taxRate,
+            total,
+            products: safeProducts.map(p => ({
+                name: p.name,
+                qty: Number(p.qty || 1),
+                price: Number(p.price || 0)
+            }))
+        });
         res.status(201).json({ message: "تم اضافه الفاتورة بنجاح", invoice });
     } catch (err) {
         res.status(500).json({ message: "فشل اضافه الفاتورة", error: err.message });
@@ -34,23 +40,58 @@ const getAllInvoice = async (req, res) => {
 const getSingleInvoice = async (req, res) => {
     try {
         const invoice = await Invoice.findById(req.params.id);
+        if (!invoice) {
+            return res.status(404).json({ message: "الفاتورة غير موجودة" });
+        }
         res.status(200).json(invoice);
     } catch (err) {
         res.status(500).json({ message: "فشل الحصول علي الفاتورة", error: err.message });
     }
 }
+
 const updateInvoice = async (req, res) => {
     try {
-        const { name, phone, address, description, image } = req.body;
-        const invoice = await Invoice.findByIdAndUpdate(req.params.id, { name, phone, address, description, image }, { new: true });
-        res.status(200).json(invoice);
+        const { name, tax, products, invoiceNumber } = req.body;
+        const currentDoc = await Invoice.findById(req.params.id);
+        if (!currentDoc) {
+            return res.status(404).json({ message: "الفاتورة غير موجودة" });
+        }
+
+        const updateData = {};
+        if (name !== undefined) updateData.name = name;
+        if (invoiceNumber !== undefined) updateData.invoiceNumber = invoiceNumber;
+        if (tax !== undefined) updateData.tax = Number(tax || 0);
+        if (products !== undefined && Array.isArray(products)) {
+            updateData.products = products.map(p => ({
+                name: p.name,
+                qty: Number(p.qty || 1),
+                price: Number(p.price || 0)
+            }));
+        }
+
+        // Recalculate total if products or tax changed
+        const effectiveTax = updateData.tax !== undefined ? updateData.tax : Number(currentDoc.tax || 0);
+        const effectiveProducts = updateData.products !== undefined ? updateData.products : currentDoc.products;
+        const priceBeforeTax = effectiveProducts.reduce((acc, product) => acc + (Number(product.price || 0) * Number(product.qty || 0)), 0);
+        updateData.total = priceBeforeTax + (priceBeforeTax * effectiveTax / 100);
+
+        const invoice = await Invoice.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        );
+        res.status(200).json({ message: "تم تحديث الفاتورة بنجاح", invoice });
     } catch (err) {
         res.status(500).json({ message: "فشل تحديث الفاتورة", error: err.message });
     }
 }
+
 const deleteInvoice = async (req, res) => {
     try {
         const invoice = await Invoice.findByIdAndDelete(req.params.id);
+        if (!invoice) {
+            return res.status(404).json({ message: "الفاتورة غير موجودة" });
+        }
         res.status(200).json({ message: "تم حذف الفاتورة بنجاح" });
     } catch (err) {
         res.status(500).json({ message: "فشل حذف الفاتورة", error: err.message });
@@ -72,10 +113,11 @@ const downloadInvoicePDF = async (req, res) => {
             "application/pdf"
         );
 
-        const safeFilename = encodeURIComponent(`فاتورة_${invoice.name || invoice._id.toString()}.pdf`);
+        const cleanName = (invoice.name || "مبيعات").replace(/[^\w\s\u0600-\u06FF-]/gi, "");
+        const safeFilename = encodeURIComponent(`فاتورة_${cleanName || invoice._id.toString()}.pdf`);
         res.setHeader(
             "Content-Disposition",
-            `attachment; filename="${safeFilename}"; filename*=UTF-8''${safeFilename}`
+            `attachment; filename="invoice_${invoice._id.toString()}.pdf"; filename*=UTF-8''${safeFilename}`
         );
 
         res.send(pdf);

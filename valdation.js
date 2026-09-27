@@ -3,26 +3,24 @@ const validatorMiddleware = require("./utils/validatorMiddleware");
 
 const createNewInvoice = [
     check("name").notEmpty().withMessage("اسم العميل مطلوب ❌"),
-    check("products").notEmpty().withMessage("المنتجات مطلوبة ❌"),
+    check("products").isArray().withMessage("المنتجات يجب أن تكون مصفوفة ❌"),
     validatorMiddleware,
-]
+];
 
 const updateInvoice = [
-    check("name").notEmpty().withMessage("الرجاء ادخال اسم العميل ❌"),
-    check("phone").notEmpty().withMessage("الرجاء ادخال رقم الهاتف ❌"),
-    check("address").notEmpty().withMessage("الرجاء ادخال العنوان ❌"),
-    check("description").notEmpty().withMessage("الرجاء ادخال الوصف ❌"),
-    check("image").notEmpty().withMessage("الرجاء ادخال الصورة ❌"),
-    validatorMiddleware
-]
+    param("id").notEmpty().withMessage("معرف الفاتورة مطلوب ❌"),
+    check("name").optional().notEmpty().withMessage("اسم العميل لا يمكن أن يكون فارغاً ❌"),
+    check("products").optional().isArray().withMessage("المنتجات يجب أن تكون مصفوفة ❌"),
+    validatorMiddleware,
+];
 
 const idParam = [
     param("id").notEmpty().withMessage("رقم الفاتورة مطلوب ❌"),
-    validatorMiddleware
-]
+    validatorMiddleware,
+];
 
 module.exports = {
     createNewInvoice,
     updateInvoice,
     idParam,
-}
+};

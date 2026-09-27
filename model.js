@@ -3,7 +3,9 @@ const mongoose = require("mongoose");
 const InvoiceSchema = new mongoose.Schema({
     id: {
         type: Number,
-        autoIncrement: true,
+    },
+    invoiceNumber: {
+        type: String,
     },
     name: {
         type: String,
