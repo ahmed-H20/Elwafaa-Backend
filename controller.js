@@ -1,5 +1,7 @@
 const Invoice = require("./model");
 const crypto = require("crypto");
+const PDFDocument = require("pdfkit");
+const generateInvoicePDF = require("./utils/generateInvoicePDF");
 
 const createNewInvoice = async (req, res) => {
     try {
@@ -19,6 +21,7 @@ const createNewInvoice = async (req, res) => {
         res.status(500).json({ message: "فشل اضافه الفاتورة", error: err.message });
     }
 }
+
 const getAllInvoice = async (req, res) => {
     try {
         const invoices = await Invoice.find().sort({ createdAt: -1 });
@@ -27,6 +30,7 @@ const getAllInvoice = async (req, res) => {
         res.status(500).json({ message: "فشل الحصول علي الفواتير", error: err.message });
     }
 }
+
 const getSingleInvoice = async (req, res) => {
     try {
         const invoice = await Invoice.findById(req.params.id);
@@ -52,10 +56,45 @@ const deleteInvoice = async (req, res) => {
         res.status(500).json({ message: "فشل حذف الفاتورة", error: err.message });
     }
 }
+
+const downloadInvoicePDF = async (req, res) => {
+    try {
+        const invoice = await Invoice.findById(req.params.id);
+        if (!invoice) {
+            return res.status(404).json({
+                message: "الفاتورة غير موجودة",
+            });
+        }
+        const pdf = await generateInvoicePDF(invoice);
+
+        res.setHeader(
+            "Content-Type",
+            "application/pdf"
+        );
+
+        const safeFilename = encodeURIComponent(`فاتورة_${invoice.name || invoice._id.toString()}.pdf`);
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${safeFilename}"; filename*=UTF-8''${safeFilename}`
+        );
+
+        res.send(pdf);
+
+    } catch (error) {
+        console.error("Server PDF generation error:", error);
+
+        res.status(500).json({
+            message: "Failed to generate invoice PDF",
+            error: error.message,
+        });
+    }
+};
+
 module.exports = {
     createNewInvoice,
     getAllInvoice,
     getSingleInvoice,
     updateInvoice,
-    deleteInvoice
+    deleteInvoice,
+    downloadInvoicePDF
 }
