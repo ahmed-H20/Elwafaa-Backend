@@ -1217,23 +1217,7 @@ function buildInvoiceHTML(invoice, options = {}) {
         ${clientName ? `<span class="action-client">العميل: ${escapeHTML(clientName)}</span>` : ""}
       </div>
 
-      <div class="action-buttons">
-        <button type="button" class="act-btn btn-print" onclick="window.print()" title="طباعة الفاتورة أو حفظ كملف PDF">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
-            <rect x="6" y="14" width="12" height="8"/>
-          </svg>
-          <span>طباعة / حفظ PDF</span>
-        </button>
-
-        ${invoiceId ? `
-        <a href="${process.env.VITE_FRONTEND_URL}/api/v1/invoices/${invoiceId}/pdf" download="فاتورة_مبيعات_${escapeHTML(invoiceNumber)}.pdf" class="act-btn btn-download" title="تنزيل ملف PDF عالي الجودة">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-          </svg>
-          <span>تحميل PDF</span>
-        </a>
-        ` : ""}
+      <div class="action-buttons">        
 
         <button type="button" class="act-btn btn-whatsapp" onclick="handleWhatsAppShare()" title="مشاركة الفاتورة عبر واتساب">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -1367,37 +1351,66 @@ function buildInvoiceHTML(invoice, options = {}) {
   </div>
 
   <script>
-    function handleWhatsAppShare() {
-      var invoiceNumber = ${JSON.stringify(invoiceNumber)};
-      var client = ${JSON.stringify(clientName)};
-      var total = ${JSON.stringify(calculatedTotal.toFixed(2))};
-      var text = "*فاتورة مبيعات - شركة الوفاء للمستلزمات*\\n\\n" +
-                 "📄 رقم الفاتورة: #" + invoiceNumber + "\\n" +
-                 "👤 العميل: " + (client || "—") + "\\n" +
-                 "💰 الإجمالي: " + total + " ريال\\n" +
-                 "🔗 رابط عرض الفاتورة:\\n" + window.location.href;
+  function handleWhatsAppShare() {
+    var num = ${JSON.stringify(invoiceNumber)};
+    var cl = ${JSON.stringify(clientName)};
+    var tot = ${JSON.stringify(calculatedTotal.toFixed(2))};
 
-      if (navigator.share) {
-        navigator.share({
-          title: "فاتورة مبيعات - " + invoiceNumber,
-          text: text,
-          url: window.location.href
-        }).catch(function() {
-          window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
-        });
-      } else {
-        window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
-      }
+    // رابط عرض الفاتورة
+    var invoiceUrl =
+      ${JSON.stringify(
+            `${process.env.VITE_BACKEND_URL || "https://elwafaabackend.vercel.app"}/api/v1/invoices/${invoiceId}/view`
+        )};
+
+    var text =
+      "*فاتورة مبيعات - شركة الوفاء للمستلزمات*" +
+      "\\n\\n" +
+      "📄 رقم الفاتورة: #" + num +
+      "\\n" +
+      "👤 العميل: " + (cl || "—") +
+      "\\n" +
+      "💰 الإجمالي: " + tot + " ريال" +
+      "\\n" +
+      "🔗 رابط عرض الفاتورة:" +
+      "\\n" +
+      invoiceUrl;
+
+    // Web Share API
+    if (navigator.share) {
+      navigator.share({
+        title: "فاتورة مبيعات - " + num,
+        text: text
+      }).catch(function (error) {
+        // User cancelled sharing
+        if (error && error.name === "AbortError") {
+          return;
+        }
+
+        // Fallback to WhatsApp
+        window.open(
+          "https://wa.me/?text=" + encodeURIComponent(text),
+          "_blank"
+        );
+      });
+
+      return;
     }
 
-    ${autoPrint ? `
-    window.addEventListener("load", function() {
-      setTimeout(function() {
-        window.print();
-      }, 350);
-    });
-    ` : ""}
-  </script>
+    // Fallback for browsers that don't support navigator.share
+    window.open(
+      "https://wa.me/?text=" + encodeURIComponent(text),
+      "_blank"
+    );
+  }
+
+  ${autoPrint ? `
+  window.addEventListener("load", function() {
+    setTimeout(function() {
+      window.print();
+    }, 400);
+  });
+  ` : ""}
+</script>
 </body>
 </html>
     `;
