@@ -1,4 +1,4 @@
-const puppeteer = require("puppeteer");
+const { default: puppeteer } = await import("puppeteer");
 const path = require("path");
 const fs = require("fs");
 
@@ -1257,7 +1257,7 @@ function buildInvoiceHTML(invoice, options = {}) {
           ${logoBase64
             ? `<img class="logo-img" src="${logoBase64}" alt="Logo" />`
             : `<div style="font-size: 22pt; font-weight: bold; color: #135d66;">الوفاء للمستلزمات</div>`
-          }
+        }
         </div>
 
         <div class="header-row">
