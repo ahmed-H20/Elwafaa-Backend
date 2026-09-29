@@ -1,4 +1,3 @@
-const { default: puppeteer } = await import("puppeteer");
 const path = require("path");
 const fs = require("fs");
 
@@ -1401,6 +1400,7 @@ function buildInvoiceHTML(invoice, options = {}) {
 }
 
 async function generateInvoicePDF(invoice) {
+    const { default: puppeteer } = await import("puppeteer");
     const browser = await puppeteer.launch({
         headless: true,
         args: [
