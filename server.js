@@ -1,9 +1,9 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const colors = require('colors');
-const mongoose = require("mongoose");
-const cors = require('cors');
-const invoiceRoute = require("./route");
+import express from 'express';
+import dotenv from 'dotenv';
+import colors from 'colors';
+import mongoose from "mongoose";
+import cors from 'cors';
+import invoiceRoute from "./route.js";
 
 dotenv.config();
 

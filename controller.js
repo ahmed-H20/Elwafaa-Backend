@@ -1,6 +1,6 @@
-const Invoice = require("./model");
-const crypto = require("crypto");
-const { generateInvoicePDF, buildInvoiceHTML } = require("./utils/generateInvoicePDF");
+import Invoice from "./model.js";
+import crypto from "crypto";
+import { generateInvoicePDF, buildInvoiceHTML } from "./utils/generateInvoicePDF.js";
 
 const createNewInvoice = async (req, res) => {
     try {
@@ -162,7 +162,7 @@ const viewInvoiceHTML = async (req, res) => {
     }
 };
 
-module.exports = {
+export {
     createNewInvoice,
     getAllInvoice,
     getSingleInvoice,

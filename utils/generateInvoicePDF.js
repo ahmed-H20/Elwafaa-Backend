@@ -1,5 +1,5 @@
-const path = require("path");
-const fs = require("fs");
+import path from "path";
+import fs from "fs";
 
 // Helper to convert logo to base64 for reliable Puppeteer rendering & standalone HTML
 function getLogoBase64() {
@@ -1449,7 +1449,7 @@ async function generateInvoicePDF(invoice) {
     }
 }
 
-module.exports = {
+export {
     generateInvoicePDF,
     buildInvoiceHTML,
     escapeHTML,

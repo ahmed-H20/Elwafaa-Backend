@@ -1,5 +1,5 @@
-const express = require("express");
-const {
+import express from "express";
+import {
     createNewInvoice,
     getAllInvoice,
     getSingleInvoice,
@@ -7,8 +7,12 @@ const {
     deleteInvoice,
     downloadInvoicePDF,
     viewInvoiceHTML
-} = require("./controller");
-const { createNewInvoice: createNewInvoiceValidation, updateInvoice: updateInvoiceValidation, idParam } = require("./valdation");
+} from "./controller.js";
+import {
+    createNewInvoiceValidation,
+    updateInvoiceValidation,
+    idParamValidation
+} from "./valdation.js";
 
 const router = express.Router();
 
@@ -18,11 +22,10 @@ router.get(
     "/:id/pdf",
     downloadInvoicePDF
 );
-router.get("/:id/view", idParam, viewInvoiceHTML);
-router.get("/:id/html", idParam, viewInvoiceHTML);
-router.get("/:id", idParam, getSingleInvoice);
+router.get("/:id/view", idParamValidation, viewInvoiceHTML);
+router.get("/:id/html", idParamValidation, viewInvoiceHTML);
+router.get("/:id", idParamValidation, getSingleInvoice);
 router.put("/:id", updateInvoiceValidation, updateInvoice);
-router.delete("/:id", idParam, deleteInvoice);
+router.delete("/:id", idParamValidation, deleteInvoice);
 
-
-module.exports = router;
+export default router;
