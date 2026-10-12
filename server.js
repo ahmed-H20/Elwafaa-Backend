@@ -4,6 +4,7 @@ import colors from 'colors';
 import mongoose from "mongoose";
 import cors from 'cors';
 import invoiceRoute from "./route.js";
+import customerRoute from "./customerRoute.js";
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ dbConnecting();
 
 
 app.use("/api/v1/invoices", invoiceRoute);
+app.use("/api/v1/customers", customerRoute);
 
 app.get('/', (req, res) => {
     res.send('Hello World!');

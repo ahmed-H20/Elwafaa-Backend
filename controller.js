@@ -1,17 +1,57 @@
 import Invoice from "./model.js";
+import Customer from "./customerModel.js";
 import crypto from "crypto";
 import { generateInvoicePDF, buildInvoiceHTML } from "./utils/generateInvoicePDF.js";
 
 const createNewInvoice = async (req, res) => {
     try {
-        const { name, tax, products, invoiceNumber } = req.body;
+        const { name, customerId, phone, tax, products, invoiceNumber } = req.body;
         const taxRate = Number(tax || 0);
         const safeProducts = Array.isArray(products) ? products : [];
         const priceBeforeTax = safeProducts.reduce((acc, product) => acc + (Number(product.price || 0) * Number(product.qty || 0)), 0);
         const total = priceBeforeTax + (priceBeforeTax * taxRate / 100);
 
+        let resolvedCustomerId = customerId || null;
+        let customerName = name ? name.trim() : "";
+
+        // If customerId is provided, verify it exists
+        if (resolvedCustomerId) {
+            const existingCustomer = await Customer.findById(resolvedCustomerId);
+            if (existingCustomer) {
+                customerName = existingCustomer.name;
+                // If phone was provided and customer has no phone, update it
+                if (phone && !existingCustomer.phone) {
+                    existingCustomer.phone = phone.trim();
+                    await existingCustomer.save();
+                }
+            } else {
+                resolvedCustomerId = null;
+            }
+        }
+
+        // If customerId is not yet resolved, find existing customer by name or create a new one
+        if (!resolvedCustomerId && customerName) {
+            let existingCustomer = await Customer.findOne({
+                name: { $regex: new RegExp(`^${customerName}$`, "i") }
+            });
+
+            if (!existingCustomer) {
+                // Auto create new customer (phone is optional)
+                existingCustomer = await Customer.create({
+                    name: customerName,
+                    phone: phone ? phone.trim() : ""
+                });
+            } else if (phone && !existingCustomer.phone) {
+                existingCustomer.phone = phone.trim();
+                await existingCustomer.save();
+            }
+
+            resolvedCustomerId = existingCustomer._id;
+        }
+
         const invoice = await Invoice.create({
-            name,
+            customerId: resolvedCustomerId,
+            name: customerName,
             invoiceNumber,
             tax: taxRate,
             total,
@@ -21,6 +61,7 @@ const createNewInvoice = async (req, res) => {
                 price: Number(p.price || 0)
             }))
         });
+
         res.status(201).json({ message: "تم اضافه الفاتورة بنجاح", invoice });
     } catch (err) {
         res.status(500).json({ message: "فشل اضافه الفاتورة", error: err.message });
@@ -29,7 +70,9 @@ const createNewInvoice = async (req, res) => {
 
 const getAllInvoice = async (req, res) => {
     try {
-        const invoices = await Invoice.find().sort({ createdAt: -1 });
+        const invoices = await Invoice.find()
+            .populate("customerId", "name phone address")
+            .sort({ createdAt: -1 });
         res.status(200).json(invoices);
     } catch (err) {
         res.status(500).json({ message: "فشل الحصول علي الفواتير", error: err.message });
@@ -38,7 +81,8 @@ const getAllInvoice = async (req, res) => {
 
 const getSingleInvoice = async (req, res) => {
     try {
-        const invoice = await Invoice.findById(req.params.id);
+        const invoice = await Invoice.findById(req.params.id)
+            .populate("customerId", "name phone address");
         if (!invoice) {
             return res.status(404).json({ message: "الفاتورة غير موجودة" });
         }
@@ -50,14 +94,13 @@ const getSingleInvoice = async (req, res) => {
 
 const updateInvoice = async (req, res) => {
     try {
-        const { name, tax, products, invoiceNumber } = req.body;
+        const { name, customerId, phone, tax, products, invoiceNumber } = req.body;
         const currentDoc = await Invoice.findById(req.params.id);
         if (!currentDoc) {
             return res.status(404).json({ message: "الفاتورة غير موجودة" });
         }
 
         const updateData = {};
-        if (name !== undefined) updateData.name = name;
         if (invoiceNumber !== undefined) updateData.invoiceNumber = invoiceNumber;
         if (tax !== undefined) updateData.tax = Number(tax || 0);
         if (products !== undefined && Array.isArray(products)) {
@@ -67,6 +110,31 @@ const updateInvoice = async (req, res) => {
                 price: Number(p.price || 0)
             }));
         }
+
+        let resolvedCustomerId = customerId !== undefined ? customerId : currentDoc.customerId;
+        let customerName = name !== undefined ? name.trim() : currentDoc.name;
+
+        if (customerId !== undefined && customerId) {
+            const existingCustomer = await Customer.findById(customerId);
+            if (existingCustomer) {
+                resolvedCustomerId = existingCustomer._id;
+                customerName = existingCustomer.name;
+            }
+        } else if (name !== undefined && name.trim()) {
+            let existingCustomer = await Customer.findOne({
+                name: { $regex: new RegExp(`^${customerName}$`, "i") }
+            });
+            if (!existingCustomer) {
+                existingCustomer = await Customer.create({
+                    name: customerName,
+                    phone: phone ? phone.trim() : ""
+                });
+            }
+            resolvedCustomerId = existingCustomer._id;
+        }
+
+        if (customerName) updateData.name = customerName;
+        if (resolvedCustomerId !== undefined) updateData.customerId = resolvedCustomerId;
 
         // Recalculate total if products or tax changed
         const effectiveTax = updateData.tax !== undefined ? updateData.tax : Number(currentDoc.tax || 0);
