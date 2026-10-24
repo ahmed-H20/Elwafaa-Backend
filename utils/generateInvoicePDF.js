@@ -54,10 +54,9 @@ function buildInvoiceHTML(invoice, options = {}) {
     }));
 
     const subtotal = products.reduce((acc, p) => acc + (Number(p.qty || 0) * Number(p.price || 0)), 0);
-    const taxRate = Number(invoice.tax || 0);
     const calculatedTotal = invoice.total !== undefined
         ? Number(invoice.total)
-        : (subtotal + (subtotal * taxRate / 100));
+        : subtotal;
 
     // Format dates cleanly
     let formattedDate = "";
@@ -1326,11 +1325,6 @@ function buildInvoiceHTML(invoice, options = {}) {
               <div>السعر</div>
             </div>
             <div class="summary-val">${subtotal.toFixed(2)}</div>
-          </div>
-
-          <div class="summary-row">
-            <div class="summary-label">الضريبة</div>
-            <div class="summary-val">${taxRate ? `% ${taxRate}` : "% 0"}</div>
           </div>
 
           <div class="summary-row-total">
