@@ -1,4 +1,4 @@
-﻿import Invoice from "./model.js";
+import Invoice from "./model.js";
 import Customer from "./customerModel.js";
 import crypto from "crypto";
 import { generateInvoicePDF, buildInvoiceHTML } from "./utils/generateInvoicePDF.js";

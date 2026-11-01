@@ -28,17 +28,11 @@ function escapeHTML(value) {
 }
 
 /**
- * Builds a 55mm thermal receipt HTML string matching the exact receipt layout:
- * - مؤسسة الوفاء الخضراء
- * - 057484102 / 311058365400003
- * - INVOICE No & Date
- * - Customer Name
- * - Product / Quantity / Rate / Amount table
- * - Base Amount, Total, Paid, Balance
- * - Payment Detail & Account No
- * - Signature
- * - Thank you! Happy Business!
- * - QR code
+ * Builds a 55mm / 58mm thermal receipt HTML string optimized for POS handheld terminals (like SCANGLE/Sunmi)
+ * and mobile devices.
+ *
+ * Designed to fill 100% of the thermal paper width without white borders,
+ * with bold, high-contrast, larger fonts (12-14px) and no blank paper tail.
  *
  * @param {Object} invoice
  * @param {Object} [options]
@@ -89,7 +83,7 @@ function buildThermalReceiptHTML(invoice, options = {}) {
 
     // QR code URL — encodes a link to the invoice view page
     const invoiceViewUrl = `${process.env.BASE_URL_PROD || "https://elwafaabackend.vercel.app"}/api/v1/invoices/${invoiceId}/view`;
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(invoiceViewUrl)}`;
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(invoiceViewUrl)}`;
 
     // Product rows
     const itemsHTML = products
@@ -108,7 +102,7 @@ function buildThermalReceiptHTML(invoice, options = {}) {
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>فاتورة حرارية #${escapeHTML(invoiceNumber)} - مؤسسة الوفاء الخضراء</title>
   <style>
     * {
@@ -118,11 +112,15 @@ function buildThermalReceiptHTML(invoice, options = {}) {
     }
 
     html, body {
-      background: #f1f5f9;
-      font-family: 'Courier New', Courier, monospace, Tahoma, Arial, sans-serif;
-      color: #000;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, Tahoma, sans-serif;
+      color: #000000;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
+      -webkit-text-size-adjust: 100%;
     }
 
     /* Action bar — screen only */
@@ -132,12 +130,12 @@ function buildThermalReceiptHTML(invoice, options = {}) {
       z-index: 9999;
       background: linear-gradient(135deg, #0d3b41 0%, #135d66 100%);
       color: #fff;
-      padding: 10px 16px;
+      padding: 10px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       box-shadow: 0 4px 15px rgba(0,0,0,.18);
       border-bottom: 2px solid #d6b374;
       font-family: Tahoma, Arial, sans-serif;
@@ -146,7 +144,7 @@ function buildThermalReceiptHTML(invoice, options = {}) {
     .action-info {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
@@ -160,13 +158,13 @@ function buildThermalReceiptHTML(invoice, options = {}) {
       font-weight: 600;
       color: #e0f2fe;
       background: rgba(255,255,255,.12);
-      padding: 3px 10px;
+      padding: 2px 8px;
       border-radius: 999px;
     }
 
     .action-buttons {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
       align-items: center;
     }
@@ -175,8 +173,8 @@ function buildThermalReceiptHTML(invoice, options = {}) {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      padding: 7px 13px;
+      gap: 5px;
+      padding: 7px 12px;
       border-radius: 6px;
       font-family: Tahoma, Arial, sans-serif;
       font-size: 12px;
@@ -193,19 +191,19 @@ function buildThermalReceiptHTML(invoice, options = {}) {
       color: #111827;
       box-shadow: 0 2px 5px rgba(214,179,116,0.4);
     }
-    .btn-thermal:hover { background-color: #c49f5c; transform: translateY(-1px); }
+    .btn-thermal:hover { background-color: #c49f5c; }
 
     .btn-a4 {
       background-color: #ffffff;
       color: #135d66;
     }
-    .btn-a4:hover { background-color: #f0fdf4; transform: translateY(-1px); }
+    .btn-a4:hover { background-color: #f0fdf4; }
 
     .btn-whatsapp {
       background-color: #25d366;
       color: #fff;
     }
-    .btn-whatsapp:hover { background-color: #20bd5a; transform: translateY(-1px); }
+    .btn-whatsapp:hover { background-color: #20bd5a; }
 
     .btn-close {
       background-color: rgba(255,255,255,.15);
@@ -213,56 +211,78 @@ function buildThermalReceiptHTML(invoice, options = {}) {
     }
     .btn-close:hover { background-color: rgba(255,255,255,.25); }
 
-    /* Screen preview viewport */
+    /* Main viewport */
     .page-viewport {
-      display: flex;
-      justify-content: center;
-      padding: 24px 12px 60px;
-      min-height: 100vh;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      min-height: auto;
+      display: block;
+      background: #ffffff;
     }
 
-    /* Receipt Ticket Container (55mm standard) */
+    /* Receipt container: fills 100% width on thermal devices with bold, legible typography */
     .receipt {
-      width: 55mm;
-      max-width: 55mm;
-      background: #fff;
-      padding: 6mm 4mm 8mm;
-      box-shadow: 0 6px 24px rgba(0,0,0,.12);
-      border-radius: 2px;
-      font-size: 9.5px;
-      line-height: 1.35;
-      color: #000;
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 6px 8px 12px;
+      background: #ffffff;
       box-sizing: border-box;
       direction: rtl;
+      font-size: 13px;
+      line-height: 1.35;
+      color: #000000;
+    }
+
+    /* Desktop centering */
+    @media screen and (min-width: 600px) {
+      body {
+        background: #f1f5f9;
+      }
+      .page-viewport {
+        display: flex;
+        justify-content: center;
+        padding: 24px 0;
+      }
+      .receipt {
+        width: 380px;
+        max-width: 380px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        border-radius: 4px;
+        padding: 16px 14px 24px;
+      }
     }
 
     /* Header */
     .r-company {
       text-align: center;
-      font-size: 11px;
-      font-weight: bold;
-      line-height: 1.4;
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.35;
       margin-bottom: 4px;
     }
 
     .r-company .r-phone {
-      font-size: 10px;
-      font-weight: normal;
+      font-size: 13px;
+      font-weight: 700;
       letter-spacing: 0.5px;
+      margin-top: 1px;
     }
 
     .r-company .r-vat {
-      font-size: 9.5px;
-      font-weight: normal;
+      font-size: 13px;
+      font-weight: 700;
       letter-spacing: 0.5px;
+      margin-top: 1px;
     }
 
     .r-title {
       text-align: center;
-      font-size: 12px;
-      font-weight: bold;
+      font-size: 16px;
+      font-weight: 900;
       margin: 6px 0 4px;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
       text-transform: uppercase;
     }
 
@@ -270,65 +290,68 @@ function buildThermalReceiptHTML(invoice, options = {}) {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      font-size: 9px;
-      margin-bottom: 4px;
-      direction: ltr; /* Keeps invoice no left, date right */
+      font-size: 12px;
+      font-weight: 700;
+      margin: 5px 0;
+      direction: ltr;
     }
 
     .r-meta-row .inv-no {
-      font-weight: bold;
+      font-weight: 800;
     }
 
     .r-client-section {
       text-align: right;
-      margin-top: 4px;
-      margin-bottom: 6px;
-      font-size: 9.5px;
+      margin: 5px 0 6px;
+      font-size: 13px;
     }
 
     .r-client-label {
-      font-weight: bold;
+      font-weight: 800;
       margin-bottom: 1px;
     }
 
     .r-client-name {
-      font-weight: normal;
-      padding-right: 2px;
+      font-weight: 700;
+      font-size: 13.5px;
     }
 
     .r-divider {
       border: none;
-      border-top: 1px dashed #444;
-      margin: 5px 0;
+      border-top: 1px dashed #000;
+      margin: 6px 0;
     }
 
     /* Items Table */
     .r-table {
       width: 100%;
       border-collapse: collapse;
-      margin: 4px 0;
-      font-size: 8.5px;
-      direction: ltr; /* English table headers align LTR */
+      margin: 6px 0;
+      font-size: 12px;
+      direction: ltr;
     }
 
     .r-table thead tr {
-      border-top: 1px dashed #444;
-      border-bottom: 1px dashed #444;
+      border-top: 1px dashed #000;
+      border-bottom: 1px dashed #000;
     }
 
     .r-table th {
-      padding: 3px 1px;
+      padding: 4px 2px;
       text-align: center;
-      font-weight: bold;
-      font-size: 8px;
+      font-weight: 800;
+      font-size: 12px;
+      color: #000;
     }
 
     .r-table td {
-      padding: 3px 1px;
+      padding: 4px 2px;
       text-align: center;
-      font-size: 8px;
+      font-size: 12px;
+      font-weight: 700;
       vertical-align: top;
       word-break: break-word;
+      color: #000;
     }
 
     .col-name {
@@ -342,33 +365,44 @@ function buildThermalReceiptHTML(invoice, options = {}) {
 
     /* Summary */
     .r-summary {
-      margin-top: 4px;
-      font-size: 9px;
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 700;
       direction: ltr;
     }
 
     .r-summary-row {
       display: flex;
       justify-content: space-between;
-      padding: 1.5px 0;
+      padding: 2px 0;
     }
 
     .r-summary-row span:last-child {
       direction: rtl;
     }
 
+    .r-summary-row.total-row {
+      font-weight: 900;
+      font-size: 14.5px;
+      border-top: 1px dashed #000;
+      border-bottom: 1px dashed #000;
+      padding: 4px 0;
+      margin: 3px 0;
+    }
+
     /* Payment Details */
     .r-payment {
-      margin-top: 5px;
-      font-size: 8px;
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 600;
       line-height: 1.45;
       direction: rtl;
       text-align: right;
     }
 
     .r-payment-title {
-      font-weight: bold;
-      font-size: 8.5px;
+      font-weight: 800;
+      font-size: 12.5px;
       margin-bottom: 2px;
       direction: ltr;
       text-align: left;
@@ -380,35 +414,36 @@ function buildThermalReceiptHTML(invoice, options = {}) {
 
     /* Signature */
     .r-sig-wrapper {
-      margin-top: 10px;
+      margin-top: 8px;
       text-align: right;
       direction: ltr;
-      font-size: 8.5px;
-      padding-top: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      padding-top: 2px;
     }
 
     /* Footer & QR */
     .r-footer {
-      margin-top: 8px;
+      margin-top: 10px;
       text-align: center;
     }
 
     .r-thanks {
-      font-size: 9.5px;
-      font-weight: bold;
-      margin-bottom: 6px;
+      font-size: 13.5px;
+      font-weight: 800;
+      margin-bottom: 8px;
       letter-spacing: 0.2px;
     }
 
     .r-footer img.qr {
-      width: 80px;
-      height: 80px;
+      width: 120px;
+      height: 120px;
       margin: 0 auto;
       display: block;
     }
 
     /* ========================
-       PRINT STYLES (55mm - 58mm)
+       PRINT STYLES (58mm)
     ======================== */
     @media print {
       @page {
@@ -420,7 +455,7 @@ function buildThermalReceiptHTML(invoice, options = {}) {
         background: #fff !important;
         margin: 0 !important;
         padding: 0 !important;
-        width: 58mm !important;
+        width: 100% !important;
       }
 
       .no-print, .action-bar, header.action-bar {
@@ -430,19 +465,19 @@ function buildThermalReceiptHTML(invoice, options = {}) {
       .page-viewport {
         padding: 0 !important;
         margin: 0 !important;
-        min-height: unset !important;
+        min-height: auto !important;
         display: block !important;
         width: 100% !important;
       }
 
       .receipt {
         width: 100% !important;
-        max-width: 58mm !important;
+        max-width: 100% !important;
         box-shadow: none !important;
         border-radius: 0 !important;
-        padding: 2mm 2.5mm 6mm !important;
+        padding: 2mm 3mm 6mm !important;
         margin: 0 auto !important;
-        font-size: 9px !important;
+        font-size: 12.5px !important;
       }
     }
   </style>
@@ -518,7 +553,7 @@ function buildThermalReceiptHTML(invoice, options = {}) {
           <span>Base Amount</span>
           <span>${subtotal.toFixed(2)} ر.س.</span>
         </div>
-        <div class="r-summary-row" style="font-weight: bold;">
+        <div class="r-summary-row total-row">
           <span>Total</span>
           <span>${calculatedTotal.toFixed(2)} ر.س.</span>
         </div>
@@ -526,7 +561,7 @@ function buildThermalReceiptHTML(invoice, options = {}) {
           <span>Paid</span>
           <span>${paid.toFixed(2)} ر.س.</span>
         </div>
-        <div class="r-summary-row" style="font-weight: bold;">
+        <div class="r-summary-row" style="font-weight: 800;">
           <span>Balance</span>
           <span>${balance.toFixed(2)} ر.س.</span>
         </div>
