@@ -1,4 +1,4 @@
-import express from "express";
+﻿﻿import express from "express";
 import {
     createNewInvoice,
     getAllInvoice,
@@ -6,7 +6,8 @@ import {
     updateInvoice,
     deleteInvoice,
     downloadInvoicePDF,
-    viewInvoiceHTML
+    viewInvoiceHTML,
+    viewThermalReceiptHTML
 } from "./controller.js";
 import {
     createNewInvoiceValidation,
@@ -24,6 +25,7 @@ router.get(
 );
 router.get("/:id/view", idParamValidation, viewInvoiceHTML);
 router.get("/:id/html", idParamValidation, viewInvoiceHTML);
+router.get("/:id/thermal", idParamValidation, viewThermalReceiptHTML);
 router.get("/:id", idParamValidation, getSingleInvoice);
 router.put("/:id", updateInvoiceValidation, updateInvoice);
 router.delete("/:id", idParamValidation, deleteInvoice);

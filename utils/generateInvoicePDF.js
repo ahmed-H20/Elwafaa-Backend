@@ -1,4 +1,4 @@
-import path from "path";
+﻿﻿import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
@@ -226,6 +226,16 @@ function buildInvoiceHTML(invoice, options = {}) {
     }
     .btn-whatsapp:hover {
       background-color: #20bd5a;
+      transform: translateY(-1px);
+    }
+
+    .btn-thermal {
+      background-color: #0f766e;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(15, 118, 110, 0.4);
+    }
+    .btn-thermal:hover {
+      background-color: #0d6560;
       transform: translateY(-1px);
     }
 
@@ -1255,6 +1265,10 @@ function buildInvoiceHTML(invoice, options = {}) {
           <span>واتساب</span>
         </button>
 
+        <button type="button" class="act-btn btn-thermal" onclick="openThermalReceipt()" title="طباعة حرارية 55mm">
+          <span>🧾 حراري (55mm)</span>
+        </button>
+
         <button type="button" class="act-btn btn-close" onclick="window.close()" title="إغلاق هذه النافذة">
           <span>إغلاق ✕</span>
         </button>
@@ -1375,6 +1389,16 @@ function buildInvoiceHTML(invoice, options = {}) {
   </div>
 
   <script>
+  function openThermalReceipt() {
+    var id = "${invoiceId}";
+    var baseUrl = "${process.env.BASE_URL_PROD || 'https://elwafaabackend.vercel.app'}";
+    if (id && id !== "") {
+      window.open(baseUrl + "/api/v1/invoices/" + id + "/thermal", "_blank");
+    } else {
+      alert("يجب حفظ الفاتورة أولاً لعرض النسخة الحرارية");
+    }
+  }
+
   function handleWhatsAppShare() {
     var num = ${JSON.stringify(invoiceNumber)};
     var cl = ${JSON.stringify(clientName)};

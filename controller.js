@@ -1,7 +1,8 @@
-import Invoice from "./model.js";
+﻿import Invoice from "./model.js";
 import Customer from "./customerModel.js";
 import crypto from "crypto";
 import { generateInvoicePDF, buildInvoiceHTML } from "./utils/generateInvoicePDF.js";
+import { buildThermalReceiptHTML } from "./utils/generateThermalReceipt.js";
 
 const createNewInvoice = async (req, res) => {
     try {
@@ -62,9 +63,9 @@ const createNewInvoice = async (req, res) => {
             }))
         });
 
-        res.status(201).json({ message: "تم اضافه الفاتورة بنجاح", invoice });
+        res.status(201).json({ message: "ØªÙ… Ø§Ø¶Ø§ÙÙ‡ Ø§Ù„ÙØ§ØªÙˆØ±Ø© Ø¨Ù†Ø¬Ø§Ø­", invoice });
     } catch (err) {
-        res.status(500).json({ message: "فشل اضافه الفاتورة", error: err.message });
+        res.status(500).json({ message: "ÙØ´Ù„ Ø§Ø¶Ø§ÙÙ‡ Ø§Ù„ÙØ§ØªÙˆØ±Ø©", error: err.message });
     }
 }
 
@@ -75,7 +76,7 @@ const getAllInvoice = async (req, res) => {
             .sort({ createdAt: -1 });
         res.status(200).json(invoices);
     } catch (err) {
-        res.status(500).json({ message: "فشل الحصول علي الفواتير", error: err.message });
+        res.status(500).json({ message: "ÙØ´Ù„ Ø§Ù„Ø­ØµÙˆÙ„ Ø¹Ù„ÙŠ Ø§Ù„ÙÙˆØ§ØªÙŠØ±", error: err.message });
     }
 }
 
@@ -84,11 +85,11 @@ const getSingleInvoice = async (req, res) => {
         const invoice = await Invoice.findById(req.params.id)
             .populate("customerId", "name phone address");
         if (!invoice) {
-            return res.status(404).json({ message: "الفاتورة غير موجودة" });
+            return res.status(404).json({ message: "Ø§Ù„ÙØ§ØªÙˆØ±Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©" });
         }
         res.status(200).json(invoice);
     } catch (err) {
-        res.status(500).json({ message: "فشل الحصول علي الفاتورة", error: err.message });
+        res.status(500).json({ message: "ÙØ´Ù„ Ø§Ù„Ø­ØµÙˆÙ„ Ø¹Ù„ÙŠ Ø§Ù„ÙØ§ØªÙˆØ±Ø©", error: err.message });
     }
 }
 
@@ -97,7 +98,7 @@ const updateInvoice = async (req, res) => {
         const { name, customerId, phone, tax, products, invoiceNumber } = req.body;
         const currentDoc = await Invoice.findById(req.params.id);
         if (!currentDoc) {
-            return res.status(404).json({ message: "الفاتورة غير موجودة" });
+            return res.status(404).json({ message: "Ø§Ù„ÙØ§ØªÙˆØ±Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©" });
         }
 
         const updateData = {};
@@ -147,9 +148,9 @@ const updateInvoice = async (req, res) => {
             updateData,
             { new: true, runValidators: true }
         );
-        res.status(200).json({ message: "تم تحديث الفاتورة بنجاح", invoice });
+        res.status(200).json({ message: "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„ÙØ§ØªÙˆØ±Ø© Ø¨Ù†Ø¬Ø§Ø­", invoice });
     } catch (err) {
-        res.status(500).json({ message: "فشل تحديث الفاتورة", error: err.message });
+        res.status(500).json({ message: "ÙØ´Ù„ ØªØ­Ø¯ÙŠØ« Ø§Ù„ÙØ§ØªÙˆØ±Ø©", error: err.message });
     }
 }
 
@@ -157,11 +158,11 @@ const deleteInvoice = async (req, res) => {
     try {
         const invoice = await Invoice.findByIdAndDelete(req.params.id);
         if (!invoice) {
-            return res.status(404).json({ message: "الفاتورة غير موجودة" });
+            return res.status(404).json({ message: "Ø§Ù„ÙØ§ØªÙˆØ±Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©" });
         }
-        res.status(200).json({ message: "تم حذف الفاتورة بنجاح" });
+        res.status(200).json({ message: "ØªÙ… Ø­Ø°Ù Ø§Ù„ÙØ§ØªÙˆØ±Ø© Ø¨Ù†Ø¬Ø§Ø­" });
     } catch (err) {
-        res.status(500).json({ message: "فشل حذف الفاتورة", error: err.message });
+        res.status(500).json({ message: "ÙØ´Ù„ Ø­Ø°Ù Ø§Ù„ÙØ§ØªÙˆØ±Ø©", error: err.message });
     }
 }
 
@@ -170,7 +171,7 @@ const downloadInvoicePDF = async (req, res) => {
         const invoice = await Invoice.findById(req.params.id);
         if (!invoice) {
             return res.status(404).json({
-                message: "الفاتورة غير موجودة",
+                message: "Ø§Ù„ÙØ§ØªÙˆØ±Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©",
             });
         }
         const pdf = await generateInvoicePDF(invoice);
@@ -180,8 +181,8 @@ const downloadInvoicePDF = async (req, res) => {
             "application/pdf"
         );
 
-        const cleanName = (invoice.name || "مبيعات").replace(/[^\w\s\u0600-\u06FF-]/gi, "");
-        const safeFilename = encodeURIComponent(`فاتورة_${cleanName || invoice._id.toString()}.pdf`);
+        const cleanName = (invoice.name || "Ù…Ø¨ÙŠØ¹Ø§Øª").replace(/[^\w\s\u0600-\u06FF-]/gi, "");
+        const safeFilename = encodeURIComponent(`ÙØ§ØªÙˆØ±Ø©_${cleanName || invoice._id.toString()}.pdf`);
         res.setHeader(
             "Content-Disposition",
             `attachment; filename="invoice_${invoice._id.toString()}.pdf"; filename*=UTF-8''${safeFilename}`
@@ -206,11 +207,11 @@ const viewInvoiceHTML = async (req, res) => {
             return res.status(404).send(`
                 <!DOCTYPE html>
                 <html dir="rtl" lang="ar">
-                <head><meta charset="UTF-8"><title>الفاتورة غير موجودة</title></head>
+                <head><meta charset="UTF-8"><title>Ø§Ù„ÙØ§ØªÙˆØ±Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©</title></head>
                 <body style="font-family: Cairo, Tahoma, sans-serif; text-align: center; padding: 50px; background: #f9fafb;">
-                    <h2 style="color: #ef4444;">عذراً، الفاتورة غير موجودة أو تم حذفها</h2>
-                    <p style="margin-top: 10px; color: #4b5563;">تأكد من صحة رقم الفاتورة وحاول مجدداً</p>
-                    <a href="/" style="display: inline-block; margin-top: 16px; padding: 8px 16px; background: #135d66; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold;">العودة للنظام</a>
+                    <h2 style="color: #ef4444;">Ø¹Ø°Ø±Ø§Ù‹ØŒ Ø§Ù„ÙØ§ØªÙˆØ±Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø© Ø£Ùˆ ØªÙ… Ø­Ø°ÙÙ‡Ø§</h2>
+                    <p style="margin-top: 10px; color: #4b5563;">ØªØ£ÙƒØ¯ Ù…Ù† ØµØ­Ø© Ø±Ù‚Ù… Ø§Ù„ÙØ§ØªÙˆØ±Ø© ÙˆØ­Ø§ÙˆÙ„ Ù…Ø¬Ø¯Ø¯Ø§Ù‹</p>
+                    <a href="/" style="display: inline-block; margin-top: 16px; padding: 8px 16px; background: #135d66; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold;">Ø§Ù„Ø¹ÙˆØ¯Ø© Ù„Ù„Ù†Ø¸Ø§Ù…</a>
                 </body>
                 </html>
             `);
@@ -226,10 +227,36 @@ const viewInvoiceHTML = async (req, res) => {
         res.send(html);
     } catch (error) {
         console.error("Server HTML generation error:", error);
-        res.status(500).send("<h2>حدث خطأ أثناء عرض الفاتورة</h2>");
+        res.status(500).send("<h2>Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ Ø¹Ø±Ø¶ Ø§Ù„ÙØ§ØªÙˆØ±Ø©</h2>");
     }
 };
 
+
+const viewThermalReceiptHTML = async (req, res) => {
+    try {
+        const invoice = await Invoice.findById(req.params.id);
+        if (!invoice) {
+            return res.status(404).send(`
+                <!DOCTYPE html>
+                <html dir="rtl" lang="ar">
+                <head><meta charset="UTF-8"><title>الفاتورة غير موجودة</title></head>
+                <body style="font-family: Cairo, Tahoma, sans-serif; text-align: center; padding: 50px; background: #f9fafb;">
+                    <h2 style="color: #ef4444;">عذراً، الفاتورة غير موجودة أو تم حذفها</h2>
+                </body>
+                </html>
+            `);
+        }
+
+        const autoPrint = req.query.print === "true";
+        const html = buildThermalReceiptHTML(invoice, { autoPrint });
+
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.send(html);
+    } catch (error) {
+        console.error("Thermal receipt generation error:", error);
+        res.status(500).send("<h2>حدث خطأ أثناء عرض الفاتورة الحرارية</h2>");
+    }
+};
 export {
     createNewInvoice,
     getAllInvoice,
@@ -237,5 +264,6 @@ export {
     updateInvoice,
     deleteInvoice,
     downloadInvoicePDF,
-    viewInvoiceHTML
+    viewInvoiceHTML,
+    viewThermalReceiptHTML
 }
