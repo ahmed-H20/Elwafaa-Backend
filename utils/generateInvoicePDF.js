@@ -7,25 +7,25 @@ const __dirname = path.dirname(__filename);
 
 // Helper to convert logo to base64 for reliable Puppeteer rendering & standalone HTML
 function getLogoBase64() {
-    try {
-        const logoPath = path.resolve(__dirname, "../assets/logo.png");
-        if (fs.existsSync(logoPath)) {
-            const fileData = fs.readFileSync(logoPath);
-            return `data:image/png;base64,${fileData.toString("base64")}`;
-        }
-    } catch (e) {
-        console.error("Error reading logo file:", e);
+  try {
+    const logoPath = path.resolve(__dirname, "../assets/logo.png");
+    if (fs.existsSync(logoPath)) {
+      const fileData = fs.readFileSync(logoPath);
+      return `data:image/png;base64,${fileData.toString("base64")}`;
     }
-    return "";
+  } catch (e) {
+    console.error("Error reading logo file:", e);
+  }
+  return "";
 }
 
 function escapeHTML(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 /**
@@ -39,50 +39,50 @@ function escapeHTML(value) {
  * @returns {string} Complete HTML document string
  */
 function buildInvoiceHTML(invoice, options = {}) {
-    const { includeActionBar = true, autoPrint = false } = options;
-    const logoBase64 = getLogoBase64();
+  const { includeActionBar = true, autoPrint = false } = options;
+  const logoBase64 = getLogoBase64();
 
-    // Support both MongoDB schema (products: [{name, qty, price}]) and frontend shape (items: [{name, quantity, price}])
-    const rawItems = Array.isArray(invoice.products)
-        ? invoice.products
-        : (Array.isArray(invoice.items) ? invoice.items : []);
+  // Support both MongoDB schema (products: [{name, qty, price}]) and frontend shape (items: [{name, quantity, price}])
+  const rawItems = Array.isArray(invoice.products)
+    ? invoice.products
+    : (Array.isArray(invoice.items) ? invoice.items : []);
 
-    const products = rawItems.map(p => ({
-        name: p.name || "",
-        qty: p.qty !== undefined ? p.qty : (p.quantity !== undefined ? p.quantity : 1),
-        price: Number(p.price || 0)
-    }));
+  const products = rawItems.map(p => ({
+    name: p.name || "",
+    qty: p.qty !== undefined ? p.qty : (p.quantity !== undefined ? p.quantity : 1),
+    price: Number(p.price || 0)
+  }));
 
-    const subtotal = products.reduce((acc, p) => acc + (Number(p.qty || 0) * Number(p.price || 0)), 0);
-    const calculatedTotal = invoice.total !== undefined
-        ? Number(invoice.total)
-        : subtotal;
+  const subtotal = products.reduce((acc, p) => acc + (Number(p.qty || 0) * Number(p.price || 0)), 0);
+  const calculatedTotal = invoice.total !== undefined
+    ? Number(invoice.total)
+    : subtotal;
 
-    // Format dates cleanly
-    let formattedDate = "";
-    if (invoice.createdAt) {
-        try {
-            const d = new Date(invoice.createdAt);
-            if (!isNaN(d.getTime())) {
-                formattedDate = d.toISOString().split("T")[0];
-            } else {
-                formattedDate = String(invoice.createdAt);
-            }
-        } catch (err) {
-            formattedDate = String(invoice.createdAt);
-        }
-    } else if (invoice.date) {
-        formattedDate = String(invoice.date);
+  // Format dates cleanly
+  let formattedDate = "";
+  if (invoice.createdAt) {
+    try {
+      const d = new Date(invoice.createdAt);
+      if (!isNaN(d.getTime())) {
+        formattedDate = d.toISOString().split("T")[0];
+      } else {
+        formattedDate = String(invoice.createdAt);
+      }
+    } catch (err) {
+      formattedDate = String(invoice.createdAt);
     }
+  } else if (invoice.date) {
+    formattedDate = String(invoice.date);
+  }
 
-    const invoiceNumber = invoice.invoiceNumber || invoice.id || invoice._id?.toString() || "1";
-    const clientName = invoice.name || invoice.clientName || "";
-    const invoiceId = invoice._id?.toString() || invoice.id || "";
+  const invoiceNumber = invoice.invoiceNumber || invoice.id || invoice._id?.toString() || "1";
+  const clientName = invoice.name || invoice.clientName || "";
+  const invoiceId = invoice._id?.toString() || invoice.id || "";
 
-    // Generate product rows
-    const itemsHTML = products
-        .map(
-            (item, index) => `
+  // Generate product rows
+  const itemsHTML = products
+    .map(
+      (item, index) => `
       <tr>
         <td class="col-num">${index + 1}</td>
         <td class="col-desc">${escapeHTML(item.name || "")}</td>
@@ -91,10 +91,10 @@ function buildInvoiceHTML(invoice, options = {}) {
         <td class="col-total">${(Number(item.qty || 0) * Number(item.price || 0)).toFixed(2)}</td>
       </tr>
     `
-        )
-        .join("");
+    )
+    .join("");
 
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -1285,9 +1285,9 @@ function buildInvoiceHTML(invoice, options = {}) {
       <div class="header">
         <div class="logo-wrapper">
           ${logoBase64
-            ? `<img class="logo-img" src="${logoBase64}" alt="Logo" />`
-            : `<div style="font-size: 22pt; font-weight: bold; color: #135d66;">الوفاء للمستلزمات</div>`
-        }
+      ? `<img class="logo-img" src="${logoBase64}" alt="Logo" />`
+      : `<div style="font-size: 22pt; font-weight: bold; color: #135d66;">الوفاء للمستلزمات</div>`
+    }
         </div>
 
         <div class="header-row">
@@ -1407,8 +1407,8 @@ function buildInvoiceHTML(invoice, options = {}) {
     // رابط عرض الفاتورة
     var invoiceUrl =
       ${JSON.stringify(
-            `${process.env.BASE_URL_PROD || "https://elwafaabackend.vercel.app"}/api/v1/invoices/${invoiceId}/view`
-        )};
+      `${process.env.BASE_URL_PROD || "https://elwafaabackend.vercel.app"}/api/v1/invoices/${invoiceId}/view`
+    )};
 
     var text =
       "*فاتورة مبيعات - شركة الوفاء للمستلزمات*" +
@@ -1465,57 +1465,57 @@ function buildInvoiceHTML(invoice, options = {}) {
 }
 
 async function generateInvoicePDF(invoice) {
-    const { default: puppeteer } = await import("puppeteer");
-    const browser = await puppeteer.launch({
-        headless: true,
-        args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--font-render-hinting=medium",
-        ],
+  const { default: puppeteer } = await import("puppeteer");
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--font-render-hinting=medium",
+    ],
+  });
+
+  try {
+    const page = await browser.newPage();
+
+    await page.setViewport({
+      width: 794,
+      height: 1123,
+      deviceScaleFactor: 2,
     });
 
-    try {
-        const page = await browser.newPage();
+    // Use the exact same HTML template without the action bar
+    const html = buildInvoiceHTML(invoice, {
+      includeActionBar: false,
+      autoPrint: false,
+    });
 
-        await page.setViewport({
-            width: 794,
-            height: 1123,
-            deviceScaleFactor: 2,
-        });
+    await page.setContent(html, {
+      waitUntil: "domcontentloaded",
+    });
 
-        // Use the exact same HTML template without the action bar
-        const html = buildInvoiceHTML(invoice, {
-            includeActionBar: false,
-            autoPrint: false,
-        });
+    await page.evaluateHandle("document.fonts.ready");
 
-        await page.setContent(html, {
-            waitUntil: "domcontentloaded",
-        });
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+      margin: {
+        top: "0",
+        right: "0",
+        bottom: "0",
+        left: "0",
+      },
+    });
 
-        await page.evaluateHandle("document.fonts.ready");
-
-        const pdf = await page.pdf({
-            format: "A4",
-            printBackground: true,
-            preferCSSPageSize: true,
-            margin: {
-                top: "0",
-                right: "0",
-                bottom: "0",
-                left: "0",
-            },
-        });
-
-        return pdf;
-    } finally {
-        await browser.close();
-    }
+    return pdf;
+  } finally {
+    await browser.close();
+  }
 }
 
 export {
-    generateInvoicePDF,
-    buildInvoiceHTML,
-    escapeHTML,
+  generateInvoicePDF,
+  buildInvoiceHTML,
+  escapeHTML,
 };
