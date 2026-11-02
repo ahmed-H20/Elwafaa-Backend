@@ -6,25 +6,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 function getLogoBase64() {
-    try {
-        const logoPath = path.resolve(__dirname, "../assets/logo.png");
-        if (fs.existsSync(logoPath)) {
-            const fileData = fs.readFileSync(logoPath);
-            return `data:image/png;base64,${fileData.toString("base64")}`;
-        }
-    } catch (e) {
-        console.error("Error reading logo file:", e);
+  try {
+    const logoPath = path.resolve(__dirname, "../assets/logo.png");
+    if (fs.existsSync(logoPath)) {
+      const fileData = fs.readFileSync(logoPath);
+      return `data:image/png;base64,${fileData.toString("base64")}`;
     }
-    return "";
+  } catch (e) {
+    console.error("Error reading logo file:", e);
+  }
+  return "";
 }
 
 function escapeHTML(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 /**
@@ -40,65 +40,65 @@ function escapeHTML(value) {
  * @returns {string} Complete HTML document string
  */
 function buildThermalReceiptHTML(invoice, options = {}) {
-    const { autoPrint = false } = options;
-    const logoBase64 = getLogoBase64();
+  const { autoPrint = false } = options;
+  const logoBase64 = getLogoBase64();
 
-    // Normalize items
-    const rawItems = Array.isArray(invoice.products)
-        ? invoice.products
-        : (Array.isArray(invoice.items) ? invoice.items : []);
+  // Normalize items
+  const rawItems = Array.isArray(invoice.products)
+    ? invoice.products
+    : (Array.isArray(invoice.items) ? invoice.items : []);
 
-    const products = rawItems.map((p) => ({
-        name: p.name || "",
-        qty: p.qty !== undefined ? p.qty : (p.quantity !== undefined ? p.quantity : 1),
-        price: Number(p.price || 0),
-    }));
+  const products = rawItems.map((p) => ({
+    name: p.name || "",
+    qty: p.qty !== undefined ? p.qty : (p.quantity !== undefined ? p.quantity : 1),
+    price: Number(p.price || 0),
+  }));
 
-    const subtotal = products.reduce(
-        (acc, p) => acc + Number(p.qty || 0) * Number(p.price || 0),
-        0
-    );
-    const calculatedTotal =
-        invoice.total !== undefined ? Number(invoice.total) : subtotal;
-    const paid = Number(invoice.paid || 0);
-    const balance = calculatedTotal - paid;
+  const subtotal = products.reduce(
+    (acc, p) => acc + Number(p.qty || 0) * Number(p.price || 0),
+    0
+  );
+  const calculatedTotal =
+    invoice.total !== undefined ? Number(invoice.total) : subtotal;
+  const paid = Number(invoice.paid || 0);
+  const balance = calculatedTotal - paid;
 
-    // Date formatted as "23 Oct 2026"
-    let formattedDate = "";
-    try {
-        const d = new Date(invoice.createdAt || invoice.date || Date.now());
-        if (!isNaN(d.getTime())) {
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            formattedDate = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-        } else {
-            formattedDate = String(invoice.createdAt || invoice.date || "");
-        }
-    } catch {
-        formattedDate = String(invoice.createdAt || invoice.date || "");
+  // Date formatted as "23 Oct 2026"
+  let formattedDate = "";
+  try {
+    const d = new Date(invoice.createdAt || invoice.date || Date.now());
+    if (!isNaN(d.getTime())) {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      formattedDate = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    } else {
+      formattedDate = String(invoice.createdAt || invoice.date || "");
     }
+  } catch {
+    formattedDate = String(invoice.createdAt || invoice.date || "");
+  }
 
-    const invoiceNumber = invoice.invoiceNumber || invoice.id || invoice._id?.toString() || "1";
-    const clientName = invoice.name || invoice.clientName || "";
-    const invoiceId = invoice._id?.toString() || invoice.id || "";
+  const invoiceNumber = invoice.invoiceNumber || invoice.id || invoice._id?.toString() || "1";
+  const clientName = invoice.name || invoice.clientName || "";
+  const invoiceId = invoice._id?.toString() || invoice.id || "";
 
-    // QR code URL — encodes a link to the invoice view page
-    const invoiceViewUrl = `${process.env.BASE_URL_PROD || "https://elwafaabackend.vercel.app"}/api/v1/invoices/${invoiceId}/view`;
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(invoiceViewUrl)}`;
+  // QR code URL — encodes a link to the invoice view page
+  const invoiceViewUrl = `${process.env.BASE_URL_PROD || "https://elwafaabackend.vercel.app"}/api/v1/invoices/${invoiceId}/view`;
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(invoiceViewUrl)}`;
 
-    // Product rows
-    const itemsHTML = products
-        .map(
-            (item) => `
+  // Product rows
+  const itemsHTML = products
+    .map(
+      (item) => `
       <tr>
         <td class="col-name">${escapeHTML(item.name)}</td>
         <td class="col-qty">${item.qty}</td>
         <td class="col-price">${Number(item.price).toFixed(2)}</td>
         <td class="col-total">${(Number(item.qty || 0) * Number(item.price || 0)).toFixed(2)}</td>
       </tr>`
-        )
-        .join("");
+    )
+    .join("");
 
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -586,7 +586,6 @@ function buildThermalReceiptHTML(invoice, options = {}) {
       <!-- Footer & QR -->
       <div class="r-footer">
         <div class="r-thanks">Thank you! Happy Business!</div>
-        <img class="qr" src="${qrApiUrl}" alt="QR Code" onerror="this.style.display='none'" />
       </div>
 
     </div>
